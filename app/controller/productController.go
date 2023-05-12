@@ -1,12 +1,13 @@
 package controller
 
 import (
-	_ "github.com/lib/pq"
 	"html/template"
 	"net/http"
 	"strconv"
 	"web-service/app/repository"
 	"web-service/app/util"
+
+	_ "github.com/lib/pq"
 )
 
 var templates = template.Must(template.ParseGlob("templates/*.html"))
@@ -39,4 +40,11 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	productId := r.URL.Query().Get("id")
 	repository.DeleteProduct(productId)
 	http.Redirect(w, r, "/", 301)
+}
+
+func Edit(w http.ResponseWriter, r *http.Request) {
+	productId := r.URL.Query().Get("id")
+	product := repository.GetProductById(productId)
+
+	templates.ExecuteTemplate(w, "Edit", product)
 }
