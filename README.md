@@ -1,9 +1,9 @@
 # About
 This application is a MVP of a web service made using the following technologies:
-    Backend: Golang
-    Container: Docker
-    Database: Postgresql (inside docker container)
-    Frontend: HTML and Bootstrap
+- Backend: Golang
+- Container: Docker
+- Database: Postgresql (inside docker container)
+- Frontend: HTML and Bootstrap
 
 # Create database in docker
 

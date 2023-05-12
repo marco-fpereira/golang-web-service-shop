@@ -22,6 +22,7 @@ func GetAllProducts() []model.Product {
 		err = sqlProducts.Scan(&id, &name, &description, &price, &amount)
 		util.ErrorHandler(err)
 
+		p.Id = id
 		p.Name = name
 		p.Description = description
 		p.Price = price
@@ -40,5 +41,15 @@ func CreateNewProduct(name string, description string, price float64, amount int
 
 	query.Exec(name, description, price, amount)
 
+	defer db.Close()
+}
+
+func DeleteProduct(productId string) {
+	db := config.DatabaseConnector()
+
+	query, err := db.Prepare("DELETE FROM products WHERE id=$1")
+	util.ErrorHandler(err)
+
+	query.Exec(productId)
 	defer db.Close()
 }
