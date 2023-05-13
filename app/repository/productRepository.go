@@ -2,18 +2,13 @@ package repository
 
 import (
 	"database/sql"
-	"reflect"
 	"web-service/app/config"
 	"web-service/app/model"
 	"web-service/app/util"
 )
 
-type ProductTypes interface {
-	model.Product | string
-}
-
 func GetAllProducts() []model.Product {
-	var sqlProducts *sql.Rows = executeQuery("SELECT * FROM products")
+	var sqlProducts *sql.Rows = executeQuery("SELECT * FROM products order by id asc")
 
 	products := []model.Product{}
 
@@ -25,7 +20,7 @@ func GetAllProducts() []model.Product {
 }
 
 func GetProductById(productId string) model.Product {
-	sqlProducts := executeQueryWithParameters("SELECT * FROM products WHERE id=$1", productId)
+	sqlProducts := executeQuery("SELECT * FROM products WHERE id=$1", productId)
 
 	var product model.Product
 	for sqlProducts.Next() {
@@ -35,45 +30,46 @@ func GetProductById(productId string) model.Product {
 }
 
 func CreateNewProduct(name string, description string, price float64, amount int) {
-	executeQueryWithParameters(
+	db := config.DatabaseConnector()
+	_, err := db.Query(
 		"INSERT INTO products(name, description, price, amount) VALUES ($1, $2, $3, $4)",
-		model.Product{Name: name, Description: description, Price: price, Amount: amount},
+		name, description, price, amount,
 	)
+
+	util.ErrorHandler(err)
+	defer db.Close()
+}
+
+func UpdateProduct(id int, name string, description string, price float64, amount int) {
+	db := config.DatabaseConnector()
+	_, err := db.Query(
+		"UPDATE products SET name=$1, description=$2, price=$3, amount=$4 WHERE id=$5",
+		name, description, price, amount, id,
+	)
+
+	util.ErrorHandler(err)
+	defer db.Close()
 }
 
 func DeleteProduct(productId string) {
-	executeQueryWithParameters("DELETE FROM products WHERE id=$1", productId)
+	executeQuery("DELETE FROM products WHERE id=$1", productId)
 }
 
-func executeQuery(query string) *sql.Rows {
+func executeQuery(query string, parameters ...string) *sql.Rows {
 	db := config.DatabaseConnector()
-
-	sqlResult, err := db.Query(query)
-	util.ErrorHandler(err)
-	defer db.Close()
-
-	return sqlResult
-}
-
-func executeQueryWithParameters(requestQuery string, parameters interface{}) *sql.Rows {
-	var result *sql.Rows
+	var sqlResult *sql.Rows
 	var err error
 
-	db := config.DatabaseConnector()
-
-	switch reflect.TypeOf(parameters).String() {
-	case "string":
-		id, _ := parameters.(string)
-		result, err = db.Query(requestQuery, id)
-	case "model.Product":
-		products, _ := parameters.(model.Product)
-		result, err = db.Query(requestQuery, products.Name, products.Description, products.Price, products.Amount)
+	if parameters == nil {
+		sqlResult, err = db.Query(query)
+	} else {
+		sqlResult, err = db.Query(query, parameters[0])
 	}
 
 	util.ErrorHandler(err)
 	defer db.Close()
 
-	return result
+	return sqlResult
 }
 
 func readObjectFromDatabase(sqlProducts *sql.Rows) model.Product {
